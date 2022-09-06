@@ -130,4 +130,4 @@ if __name__ == "__main__":
                         help="specify the web server listening port")
     args = parser.parse_args()
 
-    app.run(host="127.0.0.1", port=args.port)
+    app.run(host="0.0.0.0", port=args.port)

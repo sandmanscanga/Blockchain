@@ -1,0 +1,34 @@
+version: "3.7"
+
+services:
+
+  blockchain:
+    container_name: blockchain
+    build: blockchain
+    ports:
+      - 5000-5002:5000-5002
+    networks:
+      stuxnet:
+        aliases:
+          - blockchain
+    volumes:
+      - blockchain_logs:/blockchain/logs
+
+  client:
+    container_name: client
+    build: client
+    depends_on:
+      - blockchain
+    networks:
+      stuxnet:
+        aliases:
+          - client
+    volumes:
+      - client_logs:/client/logs
+
+networks:
+  stuxnet:
+
+volumes:
+  blockchain_logs:
+  client_logs:

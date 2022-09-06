@@ -38,7 +38,7 @@ def add_transaction(node: str, transaction: dict) -> dict:
     return response.json()
 
 
-def get_random_transactions(node: str, total: int = 50) -> list:
+def add_random_transactions(node: str, total: int = 50) -> list:
     """Gets a list of random transactions and adds them to the blockchain"""
 
     senders = tuple(range(1, 1000))
@@ -102,46 +102,66 @@ def get_consensus(node: str) -> dict:
     return response_data
 
 
-def synchronize_blockchain_network(nodes: list) -> None:
+def synchronize_blockchain_network(nodes: list, node: str = None) -> None:
     """Synchronize the chains for all nodes in the blockchain network"""
+
+    primary_node = None
+    node_list = nodes.copy()
+    if node:
+        node_index = node_list.index(node)
+        primary_node = node_list.pop(node_index)
 
     synchronized = False
     while not synchronized:
         chain_sync = True
 
-        random_chain = get_chain(random.choice(nodes))
-        for node in nodes:
-            get_consensus(node)
-            chain = get_chain(node)
-            if random_chain != chain:
-                mine_block(node)
+        if not primary_node:
+            primary_node = random.choice(node_list)
+
+        primary_chain = get_chain(primary_node)
+
+        for other_node in node_list:
+            get_consensus(other_node)
+            other_chain = get_chain(other_node)
+            if primary_chain != other_chain:
+                mine_block(primary_node)
                 chain_sync = False
 
         if chain_sync:
             synchronized = True
 
 
-def run_simulation(nodes: list, total_tests: int = 10, sync: int = 1) -> None:
+def run_simulation(nodes: list,
+                   total_tests: int = 10,
+                   sync_rate: int = 1) -> None:
     """Simulates an active blockchain network"""
 
     for test_index in range(total_tests):
         print(f"Test: {test_index + 1}", end="\r")
         node = random.choice(nodes)
-        get_random_transactions(node)
+        add_random_transactions(node)
         mine_block(node)
-        if not test_index % sync:
-            synchronize_blockchain_network(nodes)
+        if not test_index % sync_rate:
+            synchronize_blockchain_network(nodes, node)
         print()
 
 
-def main():
+def main(nodes: list) -> None:
     """Runs the main process"""
 
-    nodes = get_nodes()
     register_all_nodes(*nodes)
-    run_simulation(nodes, total_tests=500, sync=50)
+    run_simulation(nodes)
     synchronize_blockchain_network(nodes)
 
 
 if __name__ == "__main__":
-    main()
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser()
+    parser.add_argument("-n", "--nodes", type=str,
+                        default="localhost:5000,localhost:5001,localhost:5002",
+                        help="specify comma separated list of node addresses")
+    args = parser.parse_args()
+    nodes = args.nodes.split(",")
+
+    main(nodes)
